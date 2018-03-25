@@ -8,10 +8,12 @@
 
 import Foundation
 import RealmSwift
+import ChameleonFramework
 
 class Category: Object {
     
     @objc dynamic var name: String = ""
+    @objc dynamic var cellBackgroundColor: String = UIColor.randomFlat.hexValue()
     
     // Inverse relationship to Items
     let items = List<Item>()

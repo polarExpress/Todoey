@@ -8,8 +8,10 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
-class CategoryViewController: UITableViewController {
+// We inherit from our Superclass which has all the swipe functionality
+class CategoryViewController: SwipeTableViewController  {
     
     let realm = try! Realm()
 
@@ -20,6 +22,7 @@ class CategoryViewController: UITableViewController {
         
         // Retrieve categories
         loadCategories()
+        
     }
 
     //MARK - TableView DataSource Methods
@@ -29,9 +32,22 @@ class CategoryViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
+        // We create initial cell with swipe functionality in our superclass (SwipeTableViewController) and then just override it here to add text label to it
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
-        cell.textLabel?.text = categories?[indexPath.row].name ?? "No categories"
+        if let category = categories?[indexPath.row] {
+            
+            guard let categoryColor = UIColor(hexString: category.cellBackgroundColor) else {fatalError()}
+            
+            cell.textLabel?.text = category.name
+            cell.backgroundColor = categoryColor
+            cell.textLabel?.textColor = ContrastColorOf(categoryColor, returnFlat: true)
+            
+        } else {
+            
+            cell.textLabel?.text = "No categories"
+            
+        }
         
         return cell
     }
@@ -81,7 +97,7 @@ class CategoryViewController: UITableViewController {
                 realm.add(category)
             }
         } catch {
-            print("Error saving context \(error)")
+            print("Error saving category \(error)")
         }
         
         // Re-render view with new data
@@ -97,6 +113,22 @@ class CategoryViewController: UITableViewController {
         
     }
     
+    //MARK - Delete Category When Swiped
+    override func updateModel(at indexPath: IndexPath) {
+        
+        if let categoryForDeletion = self.categories?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(categoryForDeletion)
+                }
+            } catch {
+                print("Error deleting category \(error)")
+            }
+
+        }
+        
+    }
+    
     
     //MARK - TableView Delegate Methods
     
@@ -107,8 +139,10 @@ class CategoryViewController: UITableViewController {
             destinationVC.selectedCategory = categories?[indexPath.row]
         }
     }
+    
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         performSegue(withIdentifier: "goToItems", sender: self)
     }
     
 }
+
